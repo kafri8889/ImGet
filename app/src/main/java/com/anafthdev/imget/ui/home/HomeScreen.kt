@@ -1,12 +1,12 @@
 package com.anafthdev.imget.ui.home
 
-import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,21 +30,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.anafthdev.imget.R
-import com.anafthdev.imget.data.model.WImage
-import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(viewModel: HomeViewModel) {
 
     val context = LocalContext.current
+    val density = LocalDensity.current
 
     val images by viewModel.images.collectAsStateWithLifecycle(emptyList())
 
@@ -52,19 +52,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
         contract = ActivityResultContracts.OpenMultipleDocuments(),
         onResult = { imageUris ->
             // Save uris to database
-            viewModel.addImages(
-                imageUris
-                    .map { uri ->
-                        WImage(Random.nextInt(), uri.toString(), true).also {
-                            // Take uri permission
-                            context.contentResolver.takePersistableUriPermission(
-                                uri,
-                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            )
-                        }
-                    }
-                    .toTypedArray()
-            )
+            viewModel.copyUriContentsAndAddImages(imageUris)
         }
     )
 
@@ -106,6 +94,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
 
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Fixed(2),
+            contentPadding = PaddingValues(bottom = 16.dp),
             verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
@@ -114,13 +103,11 @@ fun HomeScreen(viewModel: HomeViewModel) {
         ) {
             items(
                 items = images,
-                key = { item -> item.uriString }
+                key = { item -> item.filePath }
             ) { wImage ->
-                val bitmap = remember(wImage.uriString) {
-                    // Get image bitmap from uri
-                    context.contentResolver.openInputStream(wImage.uriString.toUri())?.let { stream ->
-                        stream.use(BitmapFactory::decodeStream).also { stream.close() }
-                    }
+                val bitmap = remember(wImage.filePath) {
+                    // Get image bitmap from file path
+                    BitmapFactory.decodeFile(wImage.filePath)
                 }
 
                 if (bitmap != null) {
@@ -130,6 +117,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
                     Image(
                         bitmap = bitmap.asImageBitmap(),
                         contentDescription = null,
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(aspectRatio)
