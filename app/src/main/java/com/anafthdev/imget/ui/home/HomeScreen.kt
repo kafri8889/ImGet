@@ -24,29 +24,26 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.anafthdev.imget.R
+import com.anafthdev.imget.data.model.WImage
+import com.anafthdev.reorderable.ReorderableItem
+import com.anafthdev.reorderable.detectReorderAfterLongPress
+import com.anafthdev.reorderable.rememberReorderableLazyVerticalStaggeredGridState
+import com.anafthdev.reorderable.reorderable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(viewModel: HomeViewModel) {
-
-    val context = LocalContext.current
-    val density = LocalDensity.current
-
-    val images by viewModel.images.collectAsStateWithLifecycle(emptyList())
 
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(),
@@ -92,40 +89,15 @@ fun HomeScreen(viewModel: HomeViewModel) {
             }
         )
 
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Fixed(2),
-            contentPadding = PaddingValues(bottom = 16.dp),
-            verticalItemSpacing = 8.dp,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        LazyStaggeredGridImage(
+            images = viewModel.images.collectAsStateWithLifecycle(emptyList()).value,
+            onImageMoved = { from, to ->
+
+            },
             modifier = Modifier
                 .fillMaxWidth(0.94f)
                 .fillMaxHeight()
-        ) {
-            items(
-                items = images,
-                key = { item -> item.filePath }
-            ) { wImage ->
-                val bitmap = remember(wImage.filePath) {
-                    // Get image bitmap from file path
-                    BitmapFactory.decodeFile(wImage.filePath)
-                }
-
-                if (bitmap != null) {
-                    // Find bitmap aspect ratio
-                    val aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
-
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(aspectRatio)
-                            .clip(RoundedCornerShape(8))
-                    )
-                }
-            }
-        }
+        )
 
 //        FilledTonalButton(
 //            shape = RoundedCornerShape(25),
@@ -137,5 +109,60 @@ fun HomeScreen(viewModel: HomeViewModel) {
 //        ) {
 //            Text(text = "Add Image to widget")
 //        }
+    }
+}
+
+@Composable
+private fun LazyStaggeredGridImage(
+    images: List<WImage>,
+    onImageMoved: (from: Int, to: Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+
+    val reorderableLazyVerticalStaggeredGridState = rememberReorderableLazyVerticalStaggeredGridState(
+        onMove = { from, to ->
+            onImageMoved(from.index, to.index)
+        }
+    )
+
+    LazyVerticalStaggeredGrid(
+        state = reorderableLazyVerticalStaggeredGridState.gridState,
+        columns = StaggeredGridCells.Fixed(2),
+        contentPadding = PaddingValues(bottom = 16.dp),
+        verticalItemSpacing = 8.dp,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+            .reorderable(reorderableLazyVerticalStaggeredGridState)
+    ) {
+        items(
+            items = images,
+            key = { item -> item.id }
+        ) { wImage ->
+            val bitmap = remember(wImage.filePath) {
+                // Get image bitmap from file path
+                BitmapFactory.decodeFile(wImage.filePath)
+            }
+
+            if (bitmap != null) {
+                // Find bitmap aspect ratio
+                val aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+
+                ReorderableItem(
+                    state = reorderableLazyVerticalStaggeredGridState,
+                    key = wImage.id
+                ) { isDragging ->
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .detectReorderAfterLongPress(reorderableLazyVerticalStaggeredGridState)
+                            .fillMaxWidth()
+                            .aspectRatio(aspectRatio)
+                            .clip(RoundedCornerShape(8))
+                    )
+                }
+            }
+        }
     }
 }
