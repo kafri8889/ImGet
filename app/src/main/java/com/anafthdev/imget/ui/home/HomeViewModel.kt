@@ -33,9 +33,10 @@ class HomeViewModel @Inject constructor(
 
     fun copyUriContentsAndAddImages(uris: List<Uri>) {
         addImages(
-            fileManager.copyContent(uris).map { file ->
+            fileManager.copyContent(uris).mapIndexed { i, file ->
                 WImage(
                     id = Random.nextInt(),
+                    order = i,
                     filePath = file.path,
                     showInWidget = true
                 )
