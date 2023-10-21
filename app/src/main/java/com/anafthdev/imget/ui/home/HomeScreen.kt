@@ -126,9 +126,16 @@ private fun LazyStaggeredGridImage(
                 state = reorderableLazyVerticalStaggeredGridState,
                 modifier = Modifier
                     .animateDraggeableItemPlacement()
-            ) { isDragging ->
+            ) { _ ->
                 WImageItem(
                     wImage = wImage,
+                    isDragging = reorderableLazyVerticalStaggeredGridState.draggingItemIndex != null,
+                    onWImageUpdated = { updatedWImage ->
+
+                    },
+                    onDeleteClicked = {
+
+                    },
                     modifier = Modifier
                         .detectReorderAfterLongPress(reorderableLazyVerticalStaggeredGridState)
                 )
