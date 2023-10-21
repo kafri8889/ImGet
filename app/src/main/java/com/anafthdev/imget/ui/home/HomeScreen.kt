@@ -2,6 +2,7 @@ package com.anafthdev.imget.ui.home
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -25,11 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.anafthdev.imget.R
 import com.anafthdev.imget.data.model.WImage
 import com.anafthdev.imget.uicomponent.WImageItem
 import com.anafthdev.reorderable.ReorderableItem
+import com.anafthdev.reorderable.animateDraggeableItemPlacement
 import com.anafthdev.reorderable.detectReorderAfterLongPress
 import com.anafthdev.reorderable.rememberReorderableLazyVerticalStaggeredGridState
 import com.anafthdev.reorderable.reorderable
@@ -83,28 +84,16 @@ fun HomeScreen(viewModel: HomeViewModel) {
         )
 
         LazyStaggeredGridImage(
-            images = viewModel.images.collectAsStateWithLifecycle(emptyList()).value,
-            onImageMoved = { from, to ->
-
-            },
+            images = viewModel.images,
+            onImageMoved = viewModel::moveImage,
             modifier = Modifier
                 .fillMaxWidth(0.94f)
                 .fillMaxHeight()
         )
-
-//        FilledTonalButton(
-//            shape = RoundedCornerShape(25),
-//            onClick = {
-//
-//            },
-//            modifier = Modifier
-//                .fillMaxWidth(0.92f)
-//        ) {
-//            Text(text = "Add Image to widget")
-//        }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LazyStaggeredGridImage(
     images: List<WImage>,
@@ -132,8 +121,11 @@ private fun LazyStaggeredGridImage(
             key = { item -> item.id }
         ) { wImage ->
             ReorderableItem(
+                key = wImage.id,
+                orientationLocked = false,
                 state = reorderableLazyVerticalStaggeredGridState,
-                key = wImage.id
+                modifier = Modifier
+                    .animateDraggeableItemPlacement()
             ) { isDragging ->
                 WImageItem(
                     wImage = wImage,
