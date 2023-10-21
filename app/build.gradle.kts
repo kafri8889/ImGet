@@ -106,6 +106,8 @@ dependencies {
     val lifecycle_version by extra("2.6.2")
     val accompanist_version by extra("0.32.0")
 
+    implementation(project(mapOf("path" to ":reorderable")))
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
@@ -193,7 +195,7 @@ dependencies {
     implementation("com.jakewharton.timber:timber:5.0.1")
     implementation("com.squareup.wire:wire-runtime:4.4.3")
     implementation("io.coil-kt:coil-compose:2.4.0")
-    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+//    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
 
     implementation("commons-codec:commons-codec:1.16.0")
     implementation("commons-io:commons-io:2.11.0")

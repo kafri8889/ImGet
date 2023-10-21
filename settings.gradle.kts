@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ImGet"
 include(":app")
+include(":reorderable")
