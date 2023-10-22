@@ -1,24 +1,31 @@
 package com.anafthdev.imget.ui.home
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,24 +42,91 @@ import com.anafthdev.reorderable.detectReorderAfterLongPress
 import com.anafthdev.reorderable.rememberReorderableLazyVerticalStaggeredGridState
 import com.anafthdev.reorderable.reorderable
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(viewModel: HomeViewModel) {
 
+    Box {
+        if (viewModel.imageToDelete != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    viewModel.imageToDelete = null
+                },
+                title = {
+                    Text("Delete Image")
+                },
+                text = {
+                    Text("Are you sure you want to delete this image?")
+                },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Rounded.Delete,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(32.dp)
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.deleteImages(viewModel.imageToDelete!!)
+                            viewModel.imageToDelete = null
+                        }
+                    ) {
+                        Text("Ok")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.imageToDelete = null
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        HomeScreenContent(
+            images = viewModel.images,
+            onImageMoved = viewModel::moveImage,
+            onPhotoPickerResult = { imageUris ->
+                // Save uris to database
+                viewModel.copyUriContentsAndAddImages(imageUris)
+            },
+            onImageUpdated = { wImage ->
+                viewModel.updateImages(wImage)
+            },
+            onDeleteClicked = { wImage ->
+                viewModel.imageToDelete = wImage
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HomeScreenContent(
+    images: List<WImage>,
+    modifier: Modifier = Modifier,
+    onPhotoPickerResult: (imageUris: List<Uri>) -> Unit = {},
+    onImageUpdated: (updatedWImage: WImage) -> Unit = {},
+    onImageMoved: (from: Int, to: Int) -> Unit = { _, _ -> },
+    onDeleteClicked: (WImage) -> Unit = {}
+) {
+
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(),
-        onResult = { imageUris ->
-            // Save uris to database
-            viewModel.copyUriContentsAndAddImages(imageUris)
-        }
+        onResult = onPhotoPickerResult
     )
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxSize()
-            .systemBarsPadding()
+        modifier = modifier
     ) {
         TopAppBar(
             title = {
@@ -84,8 +158,10 @@ fun HomeScreen(viewModel: HomeViewModel) {
         )
 
         LazyStaggeredGridImage(
-            images = viewModel.images,
-            onImageMoved = viewModel::moveImage,
+            images = images,
+            onImageMoved = onImageMoved,
+            onImageUpdated = onImageUpdated,
+            onDeleteClicked = onDeleteClicked,
             modifier = Modifier
                 .fillMaxWidth(0.94f)
                 .fillMaxHeight()
@@ -98,6 +174,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
 private fun LazyStaggeredGridImage(
     images: List<WImage>,
     onImageMoved: (from: Int, to: Int) -> Unit,
+    onImageUpdated: (updatedWImage: WImage) -> Unit,
+    onDeleteClicked: (WImage) -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -130,11 +208,9 @@ private fun LazyStaggeredGridImage(
                 WImageItem(
                     wImage = wImage,
                     isDragging = reorderableLazyVerticalStaggeredGridState.draggingItemIndex != null,
-                    onWImageUpdated = { updatedWImage ->
-
-                    },
+                    onWImageUpdated = onImageUpdated,
                     onDeleteClicked = {
-
+                        onDeleteClicked(wImage)
                     },
                     modifier = Modifier
                         .detectReorderAfterLongPress(reorderableLazyVerticalStaggeredGridState)

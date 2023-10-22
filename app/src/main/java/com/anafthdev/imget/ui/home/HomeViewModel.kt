@@ -1,7 +1,10 @@
 package com.anafthdev.imget.ui.home
 
 import android.net.Uri
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anafthdev.imget.common.FileManager
@@ -24,6 +27,16 @@ class HomeViewModel @Inject constructor(
     private val wImageRepository: WImageRepository,
     private val fileManager: FileManager
 ): ViewModel() {
+
+    /**
+     * The variable [imageToDelete] is used to store a reference to the image that the user intends to delete.
+     * When the user clicks the delete button, this variable will be assigned an instance of [WImage] corresponding
+     * to the image to be deleted. If there is no image to be deleted, the variable will be set to null.
+     *
+     * When this variable is not null, it serves as an indicator that a deletion action is pending, and the
+     * application can display a confirmation dialog to the user.
+     */
+    var imageToDelete by mutableStateOf<WImage?>(null)
 
     /**
      * "images" that will be displayed on the UI
@@ -52,17 +65,21 @@ class HomeViewModel @Inject constructor(
             // wait until there is no change before updating images to db
             fImages.debounce(800).collectLatest { wImages ->
                 // update images to db
-                wImageRepository.updateWImages(*wImages.toTypedArray())
+                updateImages(*wImages.toTypedArray())
             }
         }
     }
 
-    fun addImages(images: List<WImage>) {
-        viewModelScope.launch { wImageRepository.insertWImages(*images.toTypedArray()) }
+    fun addImages(vararg images: WImage) {
+        viewModelScope.launch { wImageRepository.insertWImages(*images) }
     }
 
-    fun removeImages(images: List<WImage>) {
-        viewModelScope.launch { wImageRepository.deleteWImages(*images.toTypedArray()) }
+    fun updateImages(vararg images: WImage) {
+        viewModelScope.launch { wImageRepository.updateWImages(*images)}
+    }
+
+    fun deleteImages(vararg images: WImage) {
+        viewModelScope.launch { wImageRepository.deleteWImages(*images) }
     }
 
     fun moveImage(from: Int, to: Int) {
@@ -86,14 +103,14 @@ class HomeViewModel @Inject constructor(
 
     fun copyUriContentsAndAddImages(uris: List<Uri>) {
         addImages(
-            fileManager.copyContent(uris).mapIndexed { i, file ->
+            *fileManager.copyContent(uris).mapIndexed { i, file ->
                 WImage(
                     id = Random.nextInt(),
                     order = images.lastIndex + i + 1,
                     filePath = file.path,
                     showInWidget = true
                 )
-            }
+            }.toTypedArray()
         )
     }
 

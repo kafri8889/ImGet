@@ -102,19 +102,6 @@ fun FlippableCard(
     onClick: (() -> Unit)? = null,
 ) {
 
-    val graphicsLayerModifier = Modifier
-        .graphicsLayer {
-            if (state.cardSide.isFront) {
-                rotationZ = if (FlipRotation.Z in state.frontFlipRotation) state.currentAngle else 0f
-                rotationX = if (FlipRotation.X in state.frontFlipRotation) state.currentAngle else 0f
-                rotationY = if (FlipRotation.Y in state.frontFlipRotation) state.currentAngle else 0f
-            } else {
-                rotationZ = if (FlipRotation.Z in state.backFlipRotation) state.currentAngle else 0f
-                rotationX = if (FlipRotation.X in state.backFlipRotation) state.currentAngle else 0f
-                rotationY = if (FlipRotation.Y in state.backFlipRotation) state.currentAngle else 0f
-            }
-        }
-
     FlipCard(
         onClick = onClick,
         enabled = enabled,
@@ -124,11 +111,32 @@ fun FlippableCard(
         border = border,
         interactionSource = interactionSource,
         modifier = modifier
-            .then(graphicsLayerModifier)
+            .graphicsLayer {
+                if (state.cardSide.isFront) {
+                    rotationZ = if (FlipRotation.Z in state.frontFlipRotation) state.currentAngle else 0f
+                    rotationX = if (FlipRotation.X in state.frontFlipRotation) state.currentAngle else 0f
+                    rotationY = if (FlipRotation.Y in state.frontFlipRotation) state.currentAngle else 0f
+                } else {
+                    rotationZ = if (FlipRotation.Z in state.backFlipRotation) state.currentAngle else 0f
+                    rotationX = if (FlipRotation.X in state.backFlipRotation) state.currentAngle else 0f
+                    rotationY = if (FlipRotation.Y in state.backFlipRotation) state.currentAngle else 0f
+                }
+            }
     ) {
         Column(
             content = if (state.cardSide.isFront && state.flipFraction <= 0.5f) front else back,
-            modifier = graphicsLayerModifier
+            modifier = Modifier
+                .graphicsLayer {
+                    if (state.cardSide.isFront) {
+                        rotationZ = if (FlipRotation.Z in state.frontFlipRotation) state.currentAngle else 0f
+                        rotationX = if (FlipRotation.X in state.frontFlipRotation) state.currentAngle else 0f
+                        rotationY = if (FlipRotation.Y in state.frontFlipRotation) state.currentAngle else 0f
+                    } else {
+                        rotationZ = if (FlipRotation.Z in state.backFlipRotation) state.backAngle else 0f
+                        rotationX = if (FlipRotation.X in state.backFlipRotation) state.backAngle else 0f
+                        rotationY = if (FlipRotation.Y in state.backFlipRotation) state.backAngle else 0f
+                    }
+                }
         )
     }
 }
