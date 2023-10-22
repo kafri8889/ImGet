@@ -18,4 +18,10 @@ class CommonModule {
         @ApplicationContext context: Context
     ): FileManager = FileManager(context)
 
+    @Provides
+    @Singleton
+    fun provideImageScheduler(
+        @ApplicationContext context: Context
+    ): ImageScheduler = ImageScheduler(context)
+
 }
