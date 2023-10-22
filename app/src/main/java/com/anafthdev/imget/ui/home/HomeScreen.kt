@@ -34,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.anafthdev.imget.R
+import com.anafthdev.imget.data.ImGetDestination
 import com.anafthdev.imget.data.model.WImage
 import com.anafthdev.imget.uicomponent.WImageItem
 import com.anafthdev.reorderable.ReorderableItem
@@ -43,7 +44,10 @@ import com.anafthdev.reorderable.rememberReorderableLazyVerticalStaggeredGridSta
 import com.anafthdev.reorderable.reorderable
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel) {
+fun HomeScreen(
+    viewModel: HomeViewModel,
+    navigateTo: (ImGetDestination) -> Unit
+) {
 
     Box {
         if (viewModel.imageToDelete != null) {
@@ -89,6 +93,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
 
         HomeScreenContent(
             images = viewModel.images,
+            navigateTo = navigateTo,
             onImageMoved = viewModel::moveImage,
             onPhotoPickerResult = { imageUris ->
                 // Save uris to database
@@ -112,6 +117,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
 private fun HomeScreenContent(
     images: List<WImage>,
     modifier: Modifier = Modifier,
+    navigateTo: (ImGetDestination) -> Unit = {},
     onPhotoPickerResult: (imageUris: List<Uri>) -> Unit = {},
     onImageUpdated: (updatedWImage: WImage) -> Unit = {},
     onImageMoved: (from: Int, to: Int) -> Unit = { _, _ -> },
@@ -146,7 +152,7 @@ private fun HomeScreenContent(
 
                 IconButton(
                     onClick = {
-
+                        navigateTo(ImGetDestination.Setting)
                     }
                 ) {
                     Icon(
