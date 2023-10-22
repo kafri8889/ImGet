@@ -2,35 +2,88 @@ package com.anafthdev.imget.widget
 
 import android.content.Context
 import android.graphics.BitmapFactory
+import android.util.LayoutDirection
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.background
+import androidx.glance.currentState
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.ContentScale
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.state.GlanceStateDefinition
+import androidx.glance.state.PreferencesGlanceStateDefinition
+import androidx.glance.text.Text
+import com.anafthdev.imget.data.model.WImage
+import com.google.gson.Gson
+import timber.log.Timber
 
 class ImageAppWidget: GlanceAppWidget() {
 
+    override val stateDefinition: GlanceStateDefinition<*>
+        get() = PreferencesGlanceStateDefinition
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
-            WidgetContent(
-                context = context
-            )
+            GlanceTheme {
+                CompositionLocalProvider(
+                    LocalLayoutDirection provides if (context.resources.configuration.layoutDirection == LayoutDirection.LTR) {
+                        androidx.compose.ui.unit.LayoutDirection.Ltr
+                    } else androidx.compose.ui.unit.LayoutDirection.Rtl
+                ) {
+                    WidgetContent(
+                        context = context
+                    )
+                }
+            }
         }
     }
 
     @Composable
     private fun WidgetContent(context: Context) {
-        Image(
-            provider = ImageProvider(context.assets.open("linhui.jpg").use(BitmapFactory::decodeStream)),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = GlanceModifier
-                .fillMaxSize()
-        )
+
+        val state = currentState<Preferences>()
+        val wImage = state[ImageAppWidgetReceiver.wImages].let {
+            Timber.i("glance: wImages = $it")
+            Gson().fromJson(it ?: "[]", Array<WImage>::class.java).toList().getOrNull(state[ImageAppWidgetReceiver.currentOrder] ?: 0)
+        }
+
+        if (wImage != null) {
+            val bitmap = remember(wImage) {
+                BitmapFactory.decodeFile(wImage.filePath)
+            }
+
+            Image(
+                provider = ImageProvider(bitmap),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .cornerRadius(8.dp)
+            )
+        } else {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .cornerRadius(8.dp)
+                    .background(GlanceTheme.colors.primaryContainer)
+            ) {
+                Text(text = "Loading")
+            }
+        }
     }
 
 }

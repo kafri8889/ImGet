@@ -188,6 +188,7 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:${extra["accompanist_version"]}")
 
     // Glance For AppWidgets support
+    implementation("androidx.glance:glance:1.0.0")
     implementation("androidx.glance:glance-appwidget:1.0.0")
 
     // Other
