@@ -3,6 +3,7 @@ package com.anafthdev.imget.widget
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.os.Build
 import android.util.LayoutDirection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -29,6 +30,7 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.Text
+import com.anafthdev.imget.data.Constant
 import com.anafthdev.imget.data.SwitchImageMode
 import com.anafthdev.imget.data.model.WImage
 import com.google.gson.Gson
@@ -98,6 +100,11 @@ class ImageAppWidget: GlanceAppWidget() {
                     )
                 }
         } else GlanceModifier
+        
+        val cornerRadiusModifier = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            GlanceModifier
+                .cornerRadius(state[ImageAppWidgetReceiver.widgetRoundCornerInDp]?.dp ?: Constant.MIN_WIDGET_CORNER_SIZE_IN_DP.dp)
+        } else GlanceModifier
 
         if (wImage != null) {
             val bitmap = remember(wImage) {
@@ -110,7 +117,7 @@ class ImageAppWidget: GlanceAppWidget() {
                 contentScale = ContentScale.Crop,
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .cornerRadius(8.dp)
+                    .then(cornerRadiusModifier)
                     .then(clickableModifier)
             )
         } else {
@@ -118,7 +125,7 @@ class ImageAppWidget: GlanceAppWidget() {
                 contentAlignment = Alignment.Center,
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .cornerRadius(8.dp)
+                    .then(cornerRadiusModifier)
                     .background(GlanceTheme.colors.primaryContainer)
             ) {
                 Text(text = "Loading")
