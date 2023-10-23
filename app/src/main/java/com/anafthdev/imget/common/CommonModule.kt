@@ -24,4 +24,10 @@ class CommonModule {
         @ApplicationContext context: Context
     ): ImageScheduler = ImageScheduler(context)
 
+    @Provides
+    @Singleton
+    fun provideWidgetStateManager(
+        @ApplicationContext context: Context
+    ): WidgetStateManager = WidgetStateManager(context)
+
 }

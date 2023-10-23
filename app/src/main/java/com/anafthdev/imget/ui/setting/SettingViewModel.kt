@@ -6,9 +6,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.anafthdev.imget.common.WidgetStateManager
 import com.anafthdev.imget.data.Constant
 import com.anafthdev.imget.data.SwitchImageMode
 import com.anafthdev.imget.data.datastore.UserPreferenceDataStore
+import com.anafthdev.imget.widget.ImageAppWidgetReceiver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -16,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingViewModel @Inject constructor(
-    private val userPreferenceDataStore: UserPreferenceDataStore
+    private val userPreferenceDataStore: UserPreferenceDataStore,
+    private val widgetStateManager: WidgetStateManager
 ): ViewModel() {
 
     var widgetRoundCornersInDp by mutableIntStateOf(Constant.MIN_WIDGET_CORNER_SIZE_IN_DP.toInt())
@@ -32,6 +35,8 @@ class SettingViewModel @Inject constructor(
             ) { dp, sec, mode ->
                 Triple(dp, sec, mode)
             }.collect { (dp, sec, mode) ->
+                widgetStateManager.updateState(ImageAppWidgetReceiver::class.java)
+
                 widgetRoundCornersInDp = dp
                 imageSwitchingIntervalInSecond = sec
                 selectedSwitchImageMode = mode

@@ -1,6 +1,7 @@
 package com.anafthdev.imget.widget
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.util.LayoutDirection
 import androidx.compose.runtime.Composable
@@ -14,6 +15,7 @@ import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
@@ -27,6 +29,7 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.Text
+import com.anafthdev.imget.data.SwitchImageMode
 import com.anafthdev.imget.data.model.WImage
 import com.google.gson.Gson
 import kotlinx.coroutines.MainScope
@@ -85,6 +88,17 @@ class ImageAppWidget: GlanceAppWidget() {
             }
         }
 
+        val clickableModifier = if (SwitchImageMode.entries[state[ImageAppWidgetReceiver.switchImageMode] ?: 0] == SwitchImageMode.Click) {
+            GlanceModifier
+                .clickable {
+                    context.sendBroadcast(
+                        Intent(context, ImageAppWidgetReceiver::class.java).apply {
+                            action = ImageAppWidgetReceiver.ACTION_INCREMENT_ORDER
+                        }
+                    )
+                }
+        } else GlanceModifier
+
         if (wImage != null) {
             val bitmap = remember(wImage) {
                 BitmapFactory.decodeFile(wImage.filePath)
@@ -97,6 +111,7 @@ class ImageAppWidget: GlanceAppWidget() {
                 modifier = GlanceModifier
                     .fillMaxSize()
                     .cornerRadius(8.dp)
+                    .then(clickableModifier)
             )
         } else {
             Box(

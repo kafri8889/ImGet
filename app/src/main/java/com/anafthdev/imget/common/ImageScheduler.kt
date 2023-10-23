@@ -18,7 +18,7 @@ class ImageScheduler @Inject constructor(
             context,
             0,
             Intent(context, ImageAppWidgetReceiver::class.java).apply {
-                action = ACTION_INCREMENT_ORDER
+                action = ImageAppWidgetReceiver.ACTION_INCREMENT_ORDER
             },
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
@@ -33,10 +33,6 @@ class ImageScheduler @Inject constructor(
             triggerAt,
             getPendingIntent()
         )
-    }
-
-    companion object {
-        const val ACTION_INCREMENT_ORDER = "com.anafthdev.imget.action.ACTION_INCREMENT_ORDER"
     }
 
 }
