@@ -1,7 +1,6 @@
 package com.anafthdev.imget.widget
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.util.LayoutDirection
@@ -18,6 +17,7 @@ import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.updateAppWidgetState
@@ -93,11 +93,20 @@ class ImageAppWidget: GlanceAppWidget() {
         val clickableModifier = if (SwitchImageMode.entries[state[ImageAppWidgetReceiver.switchImageMode] ?: 0] == SwitchImageMode.Click) {
             GlanceModifier
                 .clickable {
-                    context.sendBroadcast(
-                        Intent(context, ImageAppWidgetReceiver::class.java).apply {
-                            action = ImageAppWidgetReceiver.ACTION_INCREMENT_ORDER
+                    coroutineScope.launch {
+                        // Get glance id from class
+                        GlanceAppWidgetManager(context).getGlanceIds(ImageAppWidget::class.java).firstOrNull()?.let { glanceId ->
+                            updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
+                                prefs.toMutablePreferences().apply {
+                                    this[ImageAppWidgetReceiver.currentOrder] = this[ImageAppWidgetReceiver.currentOrder]?.plus(1) ?: 0
+                                    Timber.i("glance ACTION_INCREMENT_ORDER: updated order => ${this[ImageAppWidgetReceiver.currentOrder]}")
+                                }
+                            }
+
+                            Timber.i("glance ACTION_INCREMENT_ORDER: update widget with id $glanceId")
+                            update(context, glanceId)
                         }
-                    )
+                    }
                 }
         } else GlanceModifier
         

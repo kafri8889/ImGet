@@ -41,67 +41,39 @@ class ImageAppWidgetReceiver: GlanceAppWidgetReceiver() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
-        observe(context)
+        coroutineScope.launch {
+            observe(context)
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        observe(context)
-
         coroutineScope.launch {
-            // Get glance id from class
-            GlanceAppWidgetManager(context).getGlanceIds(ImageAppWidget::class.java).firstOrNull()?.let { glanceId ->
-                when (intent.action) {
-                    ACTION_INCREMENT_ORDER -> {
-                        updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
-                            prefs.toMutablePreferences().apply {
-                                this[currentOrder] = this[currentOrder]?.plus(1) ?: 0
-                            }
-                        }
-
-                        Timber.i("glance: update widget with id $glanceId")
-                        glanceAppWidget.update(context, glanceId)
-                    }
-                    ACTION_UPDATE_STATE -> {
-                        combine(
-                            userPreferenceDataStore.getWidgetRoundCornersInDp,
-                            userPreferenceDataStore.getSelectedSwitchImageMode,
-                        ) { dp, mode ->
-                            dp to mode
-                        }.collect { (dp, mode) ->
-                            updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
-                                prefs.toMutablePreferences().apply {
-                                    this[widgetRoundCornerInDp] = dp
-                                    this[switchImageMode] = mode.ordinal
-                                }
-                            }
-                        }
-
-                        Timber.i("glance: update widget with id $glanceId")
-                        glanceAppWidget.update(context, glanceId)
-                    }
-                }
-            }
+            observe(context)
         }
     }
 
-    private fun observe(context: Context) {
-        coroutineScope.launch {
-            // Get glance id from class
-            GlanceAppWidgetManager(context).getGlanceIds(ImageAppWidget::class.java).firstOrNull()?.let { glanceId ->
-                // Observe images
-                wImageRepository.getImagesForWidget()
-                    .map { it.sortedBy { it.order } }
-                    .collect { images ->
-                        updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
-                            prefs.toMutablePreferences().apply {
-                                this[wImages] = Gson().toJson(images)
-                            }
-                        }
-
-                        Timber.i("glance: update widget with id $glanceId")
-                        glanceAppWidget.update(context, glanceId)
+    private suspend fun observe(context: Context) {
+        // Get glance id from class
+        GlanceAppWidgetManager(context).getGlanceIds(ImageAppWidget::class.java).firstOrNull()?.let { glanceId ->
+            // Observe data
+            combine(
+                wImageRepository.getImagesForWidget().map { it.sortedBy { it.order } },
+                userPreferenceDataStore.getWidgetRoundCornersInDp,
+                userPreferenceDataStore.getSelectedSwitchImageMode,
+            ) { images, dp, mode ->
+                Triple(images, dp, mode)
+            }.collect { (images, dp, mode) ->
+                updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { prefs ->
+                    prefs.toMutablePreferences().apply {
+                        this[wImages] = Gson().toJson(images)
+                        this[widgetRoundCornerInDp] = dp
+                        this[switchImageMode] = mode.ordinal
                     }
+                }
+
+                Timber.i("glance observe: update widget with id $glanceId")
+                glanceAppWidget.update(context, glanceId)
             }
         }
     }
